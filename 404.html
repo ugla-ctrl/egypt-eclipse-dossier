@@ -179,6 +179,8 @@ html.pwg-unlocked #pw-gate{display:none}
 #pw-gate .pwg-foot{margin-top:28px;font-size:12px;color:var(--muted,#5E5A52);letter-spacing:.02em}
 #pw-gate .pwg-foot a{color:var(--gold,#8A6A3A);text-decoration:none;border-bottom:1px solid var(--gold2,#C9A96A)}
 </style></head><body>
+<audio id="rahaset" src="/assets/ra-haset.mp3" loop preload="none"></audio>
+<button id="rahasetToggle" aria-label="Mute background music" style="position:fixed;left:14px;bottom:14px;z-index:90;width:34px;height:34px;border-radius:50%;border:1px solid rgba(43,42,38,.25);background:rgba(251,248,241,.85);backdrop-filter:blur(6px);color:#2B2A26;font-size:14px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center">🔊</button>
 <div id="pw-gate"><div class="pwg-card">
   <div class="pwg-powered">Presented By</div>
   <img class="pwg-logo" src="/assets/imxp-logo-presented.png" alt="IMXP">
@@ -205,6 +207,25 @@ html.pwg-unlocked #pw-gate{display:none}
     var buf = await crypto.subtle.digest("SHA-256", enc);
     return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
   }
+  function startRaHaset(){
+    var bgm = document.getElementById("rahaset"), toggle = document.getElementById("rahasetToggle");
+    if (!bgm) return;
+    var muted = false; try { muted = localStorage.getItem("ee_bgm_muted") === "1"; } catch(e) {}
+    if (muted) { bgm.muted = true; }
+    var p = bgm.play();
+    if (p && p.catch) p.catch(function(){ if (toggle) toggle.style.display = "flex"; });
+    if (toggle) {
+      toggle.style.display = "flex";
+      toggle.textContent = bgm.muted ? "\uD83D\uDD07" : "\uD83D\uDD0A";
+      toggle.onclick = function(){
+        if (bgm.paused) { bgm.muted = false; bgm.play().catch(function(){}); toggle.textContent = "\uD83D\uDD0A"; try { localStorage.setItem("ee_bgm_muted","0"); } catch(e) {} return; }
+        bgm.muted = !bgm.muted;
+        toggle.textContent = bgm.muted ? "\uD83D\uDD07" : "\uD83D\uDD0A";
+        try { localStorage.setItem("ee_bgm_muted", bgm.muted ? "1" : "0"); } catch(e) {}
+      };
+    }
+  }
+  if (document.documentElement.classList.contains("pwg-unlocked")) { startRaHaset(); }
   var form = document.getElementById("pwg-form");
   form.addEventListener("submit", function(e){
     e.preventDefault();
@@ -213,6 +234,7 @@ html.pwg-unlocked #pw-gate{display:none}
       if (h === TARGET) {
         try { localStorage.setItem("eedossier_unlocked", "1"); } catch(e) {}
         document.documentElement.classList.add("pwg-unlocked");
+        startRaHaset();
       } else {
         document.getElementById("pwg-err").classList.add("show");
       }

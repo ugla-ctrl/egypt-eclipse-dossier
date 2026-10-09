@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><script>try{if(localStorage.getItem('eedossier_unlocked')==='1'){document.documentElement.classList.add('pwg-unlocked');}}catch(e){}</script><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Egypt Eclipse Project Dossier</title>
 <meta name="description" content="Egypt Eclipse 2027 — the final chapter of the Eclipse Trilogy in Luxor. Program overview, partnership pathways, Trilogy Council, and the timeline to the longest remaining totality of the century.">
 <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
@@ -229,14 +229,12 @@ html.pwg-unlocked #pw-gate{display:none}
     }
     if (bgm.readyState >= 1) { go(); } else { bgm.addEventListener("loadedmetadata", go, {once:true}); bgm.load(); }
   }
-  if (document.documentElement.classList.contains("pwg-unlocked")) { startRaHaset(); }
   var form = document.getElementById("pwg-form");
   form.addEventListener("submit", function(e){
     e.preventDefault();
     var val = document.getElementById("pwg-pw").value;
     sha256hex(val).then(function(h){
       if (h === TARGET) {
-        try { localStorage.setItem("eedossier_unlocked", "1"); } catch(e) {}
         document.documentElement.classList.add("pwg-unlocked");
         startRaHaset();
       } else {

@@ -212,9 +212,16 @@ html.pwg-unlocked #pw-gate{display:none}
   function startRaHaset(){
     var bgm = document.getElementById("rahaset");
     if (!bgm) return;
+    function armFallback(){
+      function resume(){ bgm.play().catch(function(){}); }
+      ["pointerdown","keydown","touchstart"].forEach(function(ev){
+        document.addEventListener(ev, resume, {once:true, passive:true});
+      });
+    }
     function go(){
       try { bgm.currentTime = 20; } catch(e) {}
-      bgm.play().catch(function(){});
+      var p = bgm.play();
+      if (p && p.catch) { p.catch(armFallback); } else if (!p) { armFallback(); }
     }
     if (bgm.readyState >= 1) { go(); } else { bgm.addEventListener("loadedmetadata", go, {once:true}); bgm.load(); }
   }

@@ -226,8 +226,12 @@ html.pwg-unlocked #pw-gate{display:none}
     if (!bgm) return;
     var muted = false; try { muted = localStorage.getItem("ee_bgm_muted") === "1"; } catch(e) {}
     if (muted) { bgm.muted = true; }
-    var p = bgm.play();
-    if (p && p.catch) p.catch(function(){ if (toggle) toggle.style.display = "flex"; });
+    function go(){
+      try { bgm.currentTime = 20; } catch(e) {}
+      var p = bgm.play();
+      if (p && p.catch) p.catch(function(){ if (toggle) toggle.style.display = "flex"; });
+    }
+    if (bgm.readyState >= 1) { go(); } else { bgm.addEventListener("loadedmetadata", go, {once:true}); bgm.load(); }
     if (toggle) {
       toggle.style.display = "flex";
       toggle.textContent = bgm.muted ? "\uD83D\uDD07" : "\uD83D\uDD0A";

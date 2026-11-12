@@ -300,6 +300,10 @@ html.pwg-unlocked #pw-gate{display:none}
 #pw-gate form{display:flex;flex-direction:column;gap:14px}
 #pw-gate label{display:block;text-align:left;font-family:"Tenor Sans","Helvetica Neue",Arial,sans-serif;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#E4BD82;margin-bottom:6px}
 #pw-gate input[type=password]{width:100%;background:rgba(232,226,214,.06);border:1px solid rgba(232,226,214,.3);color:#F4F0E8;font-family:"EB Garamond",Georgia,serif;font-size:16px;padding:12px 14px;outline:none;box-sizing:border-box}
+#pw-gate input[type=email]{width:100%;background:rgba(232,226,214,.06);border:1px solid rgba(232,226,214,.3);color:#F4F0E8;font-family:"EB Garamond",Georgia,serif;font-size:16px;padding:12px 14px;outline:none;box-sizing:border-box}
+#pw-gate input[type=email]:focus{border-color:#E4BD82}
+#pw-gate form[hidden]{display:none}
+#pw-gate .pwg-hint{font-size:12.5px;color:#9A9384;font-style:italic;text-align:center;margin-top:2px;font-family:"EB Garamond",Georgia,serif}
 #pw-gate input[type=password]:focus{border-color:#E4BD82}
 #pw-gate button{font-family:"Tenor Sans","Helvetica Neue",Arial,sans-serif;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;background:#E4BD82;color:#101113;border:1px solid #E4BD82;padding:13px 16px;cursor:pointer;margin-top:4px}
 #pw-gate button:hover{background:#80502C;border-color:#80502C;color:#F4F0E8}
@@ -332,6 +336,15 @@ html.pwg-unlocked #pw-gate{display:none}
     <div class="pwg-err" id="pwg-err">That password is not right. Please try again.</div>
     <button type="submit">Enter Dossier</button>
   </form>
+  <form id="pwg-email-form" hidden novalidate>
+    <div>
+      <label for="pwg-em">Your Email</label>
+      <input id="pwg-em" type="email" placeholder="you@company.com" autocomplete="email">
+    </div>
+    <div class="pwg-err" id="pwg-em-err">Please enter a valid email address.</div>
+    <button type="submit">Enter Dossier</button>
+    <div class="pwg-hint">We will only use it to follow up about this dossier.</div>
+  </form>
   <div class="pwg-foot">Need access? Contact <a href="mailto:mitch@imxp.org">mitch@imxp.org</a></div>
 </div></div>
 <script>
@@ -357,14 +370,61 @@ html.pwg-unlocked #pw-gate{display:none}
     }
     if (bgm.readyState >= 1) { go(); } else { bgm.addEventListener("loadedmetadata", go, {once:true}); bgm.load(); }
   }
+  var EMAIL_KEY = 'egypt_dossier_email';
+  var SUPA_URL = 'https://qmxhsendoepqeyeolzil.supabase.co', SUPA_KEY = 'sb_publishable_qU4HH0buJWQW3_RJk3QlYg_5r84ZfdP';
+  function H(){ return {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'}; }
+  // Visit tracking: active-tab time per visit, written through the deck_view_beat() database function with the viewer's email.
+  function track(email){
+    try{
+      var SID = (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(16).slice(2));
+      var ms = 0, last = (document.visibilityState === 'visible' ? Date.now() : null), sent = -1;
+      function tick(){ if (last !== null) { ms += Math.min(Date.now() - last, 60000); last = Date.now(); } }
+      function send(k){
+        tick(); var s = Math.round(ms/1000); if (s < 3 || s === sent) return; sent = s;
+        fetch(SUPA_URL+'/rest/v1/rpc/deck_view_beat', {method:'POST', keepalive:!!k, headers:H(), body:JSON.stringify({p_deck:'egypt-dossier', p_session_id:SID, p_email:email, p_seconds:s})}).catch(function(){});
+      }
+      document.addEventListener('visibilitychange', function(){ tick(); last = document.visibilityState === 'visible' ? Date.now() : null; if (document.visibilityState === 'hidden') send(true); });
+      setInterval(function(){ send(false); }, 20000);
+      addEventListener('pagehide', function(){ send(true); });
+    }catch(e){}
+  }
+  function saveLead(email, source){
+    try{
+      fetch(SUPA_URL+'/rest/v1/imxp_deck_leads', {method:'POST', keepalive:true, headers:Object.assign(H(), {'Prefer':'return=minimal'}),
+        body:JSON.stringify({email:email, name:null, source:source, referrer:document.referrer||null, user_agent:navigator.userAgent})}).catch(function(){});
+    }catch(e){}
+  }
+  function openDossier(email){
+    document.documentElement.classList.add("pwg-unlocked");
+    startRaHaset();
+    track(email);
+  }
+  // After the password: ask for an email once per browser, so every recorded visit has an address.
+  function afterPassword(){
+    var saved = null;
+    try { saved = localStorage.getItem(EMAIL_KEY); } catch(e){}
+    if (saved) { openDossier(saved); return; }
+    document.getElementById("pwg-form").hidden = true;
+    document.getElementById("pwg-email-form").hidden = false;
+    setTimeout(function(){ try { document.getElementById("pwg-em").focus({preventScroll:true}); } catch(e){} }, 100);
+  }
+  document.getElementById("pwg-email-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = (document.getElementById("pwg-em").value || "").trim();
+    var err = document.getElementById("pwg-em-err");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { err.classList.add("show"); return; }
+    err.classList.remove("show");
+    try { localStorage.setItem(EMAIL_KEY, v); } catch(e){}
+    saveLead(v, 'egypt-dossier-gate');
+    openDossier(v);
+  });
   var form = document.getElementById("pwg-form");
   form.addEventListener("submit", function(e){
     e.preventDefault();
     var val = document.getElementById("pwg-pw").value;
     sha256hex(val).then(function(h){
       if (h === TARGET) {
-        document.documentElement.classList.add("pwg-unlocked");
-        startRaHaset();
+        afterPassword();
       } else {
         document.getElementById("pwg-err").classList.add("show");
       }

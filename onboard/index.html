@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Who’s on board? · Egypt Eclipse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&family=Tenor+Sans&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;min-height:100%;background:#101113;color:#E8E2D6}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:24px;box-sizing:border-box;font-family:"EB Garamond",Georgia,serif}
+.card{width:440px;max-width:100%;border:1px solid rgba(232,226,214,.22);padding:52px 40px;text-align:center;box-sizing:border-box}
+.eyebrow{font-family:"Tenor Sans","Helvetica Neue",Arial,sans-serif;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#E4BD82}
+h1{font-weight:400;font-size:40px;line-height:1.05;margin:14px 0 10px;text-wrap:balance}
+p{font-size:17px;line-height:1.5;color:#B9B2A4;margin:0 0 26px;text-wrap:pretty}
+.rule{width:56px;height:1px;background:rgba(228,189,130,.6);margin:0 auto 26px}
+label{display:block;text-align:left;font-family:"Tenor Sans","Helvetica Neue",Arial,sans-serif;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#E4BD82;margin-bottom:6px}
+input{width:100%;box-sizing:border-box;background:rgba(232,226,214,.06);border:1px solid rgba(232,226,214,.3);color:#F4F0E8;font-family:"EB Garamond",Georgia,serif;font-size:17px;padding:12px 14px;outline:none}
+input:focus{border-color:#E4BD82}
+button{width:100%;margin-top:16px;font-family:"Tenor Sans","Helvetica Neue",Arial,sans-serif;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;background:#E4BD82;color:#101113;border:1px solid #E4BD82;padding:13px 16px;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+.err{min-height:1.4em;margin-top:12px;font-size:15px;color:#E59A8B}
+.loading{font-size:17px;color:#B9B2A4}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Egypt Eclipse · Team</div>
+  <h1>Who’s on board?</h1>
+  <div class="rule"></div>
+  <form id="gate" hidden>
+    <p>Hosts, Featured Participants, crew and the program, by pathway. For the Egypt Eclipse team.</p>
+    <label for="pw">Access password</label>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Enter password">
+    <button id="go" type="submit">Enter</button>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+  <div class="loading" id="loading">Opening the roster…</div>
+</div>
+<script>
+(function(){
+  var API = "https://ybmevmwefsvigcesjojo.supabase.co/functions/v1/onboard", KEY = "ee_onboard_pass";
+  var gate = document.getElementById("gate"), loading = document.getElementById("loading"), err = document.getElementById("err"), go = document.getElementById("go");
+  function get(){ try { return localStorage.getItem(KEY); } catch(e){ return null; } }
+  function put(v){ try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch(e){} }
+  function showGate(msg){ loading.hidden = true; gate.hidden = false; err.textContent = msg || ""; go.disabled = false; setTimeout(function(){ document.getElementById("pw").focus(); }, 50); }
+  async function open(pass){
+    var r = await fetch(API, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({op:"app", pass:pass})});
+    if (r.status === 401) return false;
+    if (!r.ok) throw new Error("load failed");
+    var html = await r.text();
+    document.open(); document.write(html); document.close();
+    return true;
+  }
+  async function attempt(pass, fromForm){
+    put(pass);
+    try {
+      if (await open(pass)) return;
+      put(null); showGate(fromForm ? "That password is not right. Please try again." : "");
+    } catch(e){ showGate("Couldn't reach the roster. Check your connection and try again."); }
+  }
+  gate.addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = document.getElementById("pw").value.trim(); if (!v) return;
+    go.disabled = true; err.textContent = ""; loading.hidden = false; gate.hidden = true;
+    attempt(v, true);
+  });
+  var saved = get();
+  if (saved) attempt(saved, false); else showGate("");
+})();
+</script>
+</body>
+</html>
